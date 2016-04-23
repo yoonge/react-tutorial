@@ -4,19 +4,144 @@
     <meta charset="utf-8">
     <title>React Tutorial</title>
     <!-- Not present in the tutorial. Just for basic styling. -->
-    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.6/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="css/base.css">
+  </head>
+  <body>
+    <div class="container" id="content"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.0.1/react.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.0.1/react-dom.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.6.16/browser.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.2/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/0.3.5/marked.min.js"></script>
-  </head>
-  <body>
-    <div id="content"></div>
-    <script type="text/babel" src="scripts/example.js"></script>
+    <!-- <script type="text/babel" src="scripts/example.js"></script> -->
     <script type="text/babel">
       // To get started with this tutorial running your own code, simply remove
       // the script tag loading scripts/example.js and start writing code here.
+
+        var Comment = React.createClass({
+            rawMarkup() {
+                var rawMarkup = marked(this.props.children.toString(), {sanitize: true});
+                return {__html: rawMarkup};
+            },
+
+            render() {
+                return (
+                    <div className="comment">
+                        <h2 className="commentAuthor">
+                            {this.props.author}
+                        </h2>
+                        <span dangerouslySetInnerHTML={this.rawMarkup()} />
+                    </div>
+                );
+            }
+        });
+
+        var CommentList = React.createClass({
+            render() {
+                var commentNodes = this.props.data.map(function(comment) {
+                    return (
+                        <Comment key={comment.id} author={comment.author}>
+                            {comment.text}
+                        </Comment>
+                    );
+                });
+                return (
+                    <div className="commentList">
+                        {commentNodes}
+                    </div>
+                );
+            }
+        });
+
+        var CommentForm = React.createClass({
+            handleSubmit(e) {
+                e.preventDefault();
+                var author = this.refs.author.value.trim();
+                var text = this.refs.text.value.trim();
+                if (!text || !author) {
+                    return;
+                }
+                this.props.onCommentSubmit({author: author, text: text});
+                this.refs.author.value = '';
+                this.refs.text.value = '';
+                return;
+            },
+            render() {
+                return (
+                    <form className="commentForm" onSubmit={this.handleSubmit}>
+                        <h1>Add Comments</h1>
+                        <div className="form-group">
+                            <input type="text" className="form-control" ref="author" placeholder="Your name" />
+                        </div>
+                        <div className="form-group">
+                            <textarea className="form-control" ref="text" placeholder="Say something..." />
+                        </div>
+                        <div className="form-group">
+                            <input type="submit" className="btn btn-lg btn-primary" value="Post" />
+                        </div>
+                    </form>
+                );
+            }
+        });
+
+        var CommentBox = React.createClass({
+            loadCommentsFromServer() {
+                $.ajax({
+                    url: this.props.url,
+                    dataType: 'json',
+                    cache: false,
+                    success: function(res) {
+                        this.setState({data: res});
+                    }.bind(this),
+                    error: function(xhr, status, err) {
+                        console.error(this.props.url, status, err.toString());
+                    }.bind(this)
+                });
+            },
+            handleCommentSubmit(comment) {
+                var comments = this.state.data;
+                var newComments = comments.concat([comment]);
+                this.setState({data: newComments});
+                $.ajax({
+                    url: this.props.url,
+                    dataType: 'json',
+                    type: 'POST',
+                    data: comment,
+                    success: function(res) {
+                        this.setState({data: res});
+                    }.bind(this),
+                    error: function(xhr, status, err) {
+                        console.error(this.props.url, status, err.toString());
+                    }.bind(this)
+                });
+            },
+            getInitialState() {
+                return {
+                    data: []
+                };
+            },
+            componentDidMount() {
+                this.loadCommentsFromServer();
+                setInterval(this.loadCommentsFromServer, this.props.pollInterval);
+            },
+            render() {
+                return (
+                    <div className="commentBox">
+                        <h1>Comments List</h1>
+                        <CommentList data={this.state.data} />
+                        <CommentForm onCommentSubmit={this.handleCommentSubmit} />
+                    </div>
+                );
+            }
+        });
+
+        ReactDOM.render(
+            <CommentBox url="/api/comments" pollInterval={2000} />,
+            document.getElementById('content')
+        );
     </script>
   </body>
 </html>

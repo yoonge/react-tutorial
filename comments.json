@@ -8,5 +8,20 @@
         "id": 1420070400000,
         "author": "Paul O’Shannessy",
         "text": "React is *great*!"
+    },
+    {
+        "id": 1450929201095,
+        "author": "Yoonge",
+        "text": "*Hello world !*"
+    },
+    {
+        "id": 1461147194811,
+        "author": "Yoonge",
+        "text": "$(\"p\").append( $(\"input\").map(function(){\n  return $(this).val();\n}).get().join(\", \") );"
+    },
+    {
+        "id": 1461147379623,
+        "author": "Yoonge",
+        "text": "```\n$(\"p\").append( $(\"input\").map(function(){\n  return $(this).val();\n}).get().join(\", \") );\n```"
     }
 ]
